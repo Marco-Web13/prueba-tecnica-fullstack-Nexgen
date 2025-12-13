@@ -1,7 +1,7 @@
-import { DataTypes } from 'sequelize';
-import sequelize from '../config/db.js';
+import { DataTypes } from "sequelize";
+import sequelize from "../config/db.js";
 
-const Materia = sequelize.define('Materia', {
+const Materia = sequelize.define("Materia", {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -21,8 +21,8 @@ const Materia = sequelize.define('Materia', {
     allowNull: true
   },
   estatus: {
-    type: DataTypes.TINYINT,
-    defaultValue: 1,         // 1 = Activo por defecto
+    type: DataTypes.SMALLINT,
+    defaultValue: 1,
     allowNull: true
   }
 }, {

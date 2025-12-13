@@ -1,7 +1,8 @@
-import { DataTypes } from 'sequelize' 
-import sequelize from '../config/db.js' 
+import { DataTypes } from "sequelize" 
+import sequelize from "../config/db.js"
+import bcrypt from "bcryptjs";
 
-const Usuario = sequelize.define('Usuario', {
+const Usuario = sequelize.define("Usuario", {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -24,10 +25,10 @@ const Usuario = sequelize.define('Usuario', {
     allowNull: false
   },
   rol: {
-    type: DataTypes.ENUM('MAESTRO', 'CONTROL_ESCOLAR'),
+    type: DataTypes.ENUM("MAESTRO", "CONTROL_ESCOLAR"),
     allowNull: false,
     validate: {
-      isIn: [['MAESTRO', 'CONTROL_ESCOLAR']]
+      isIn: [["MAESTRO", "CONTROL_ESCOLAR"]]
     }
   }
 }, {
@@ -37,4 +38,23 @@ const Usuario = sequelize.define('Usuario', {
   updatedAt: 'updated_at'
 }) 
 
-export default Usuario 
+//hashear la contraseña antes de crear el usuario
+Usuario.beforeCreate(async (usuario) => {
+  if (usuario.password_hash) {
+    const salt = bcrypt.genSaltSync(10);
+    usuario.password_hash = bcrypt.hashSync(usuario.password_hash, salt);
+  }
+});
+
+Usuario.beforeUpdate(async (usuario) => {
+  if (usuario.changed('password_hash')) {
+    const salt = bcrypt.genSaltSync(10);
+    usuario.password_hash = bcrypt.hashSync(usuario.password_hash, salt);
+  }
+});
+
+Usuario.prototype.validarPassword = async function (passwordIngresado) {
+  return bcrypt.compareSync(passwordIngresado, this.password_hash);
+};
+
+export default Usuario;

@@ -1,7 +1,7 @@
-import { DataTypes } from 'sequelize'
-import sequelize from '../config/db.js'
+import { DataTypes } from "sequelize"
+import sequelize from "../config/db.js"
 
-const Alumno = sequelize.define('Alumno', {
+const Alumno = sequelize.define("Alumno", {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -31,4 +31,4 @@ const Alumno = sequelize.define('Alumno', {
   updatedAt: 'updated_at'
 }) 
 
-module.exports = Alumno 
+export default Alumno;

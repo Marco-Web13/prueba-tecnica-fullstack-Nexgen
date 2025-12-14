@@ -13,14 +13,14 @@ Asignacion.belongsTo(Materia, { foreignKey: 'materia_id', as: 'materia' });
 
 // Un Alumno > Muchas Calificaciones
 Alumno.hasMany(Calificaciones, { foreignKey: 'alumno_id' });
-Calificaciones.belongsTo(Alumno, { foreignKey: 'alumno_id' });
+Calificaciones.belongsTo(Alumno, { foreignKey: 'alumno_id', as: 'alumno' });
 
 // Una Materia > Muchas Calificaciones
 Materia.hasMany(Calificaciones, { foreignKey: 'materia_id' });
-Calificaciones.belongsTo(Materia, { foreignKey: 'materia_id' });
+Calificaciones.belongsTo(Materia, { foreignKey: 'materia_id', as: 'materia' });
 
 // Un Maestro(Usuario) > Muchas Calificaciones
 Usuario.hasMany(Calificaciones, { foreignKey: 'maestro_id' });
-Calificaciones.belongsTo(Usuario, { foreignKey: 'maestro_id' });
+Calificaciones.belongsTo(Usuario, { foreignKey: 'maestro_id', as: 'docente' });
 
 export { Usuario, Alumno, Materia, Calificaciones, Asignacion };

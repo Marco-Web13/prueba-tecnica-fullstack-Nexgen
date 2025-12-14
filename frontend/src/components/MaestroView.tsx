@@ -18,32 +18,27 @@ interface AlumnoConNota {
 }
 
 export const MaestroView = () => {
-  // Estado de navegación
   const [materias, setMaterias] = useState<Materia[]>([]);
   const [materiaSeleccionada, setMateriaSeleccionada] = useState<Materia | null>(null);
   
-  // Estado de datos
   const [alumnos, setAlumnos] = useState<AlumnoConNota[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Estado del formulario de calificación
   const [alumnoAEditar, setAlumnoAEditar] = useState<AlumnoConNota | null>(null);
   const [notaInput, setNotaInput] = useState('');
   const [obsInput, setObsInput] = useState('');
   const [mensaje, setMensaje] = useState<{tipo: string, texto: string} | null>(null);
 
-  // 1. Cargar materias al inicio
   useEffect(() => {
     client.get('/maestro/materias')
       .then(res => setMaterias(res.data))
       .catch(err => console.error(err));
   }, []);
 
-  // 2. Cargar alumnos cuando se selecciona una materia
   const seleccionarMateria = async (materia: Materia) => {
     setLoading(true);
     setMateriaSeleccionada(materia);
-    setAlumnos([]); // Limpiar tabla anterior
+    setAlumnos([]);
     try {
       const res = await client.get(`/maestro/materias/${materia.id}/alumnos`);
       setAlumnos(res.data);
@@ -54,7 +49,6 @@ export const MaestroView = () => {
     }
   };
 
-  // 3. Guardar Calificación
   const handleGuardarNota = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!alumnoAEditar || !materiaSeleccionada) return;
@@ -67,24 +61,20 @@ export const MaestroView = () => {
         observaciones: obsInput
       });
 
-      setMensaje({ tipo: 'success', texto: '✅ Calificación guardada' });
-      
-      // Recargar la lista para ver el cambio reflejado
+      setMensaje({ tipo: 'success', texto: 'Calificación guardada correctamente' });
       const res = await client.get(`/maestro/materias/${materiaSeleccionada.id}/alumnos`);
       setAlumnos(res.data);
       
-      // Cerrar formulario
       setAlumnoAEditar(null);
     } catch (error) {
-      setMensaje({ tipo: 'danger', texto: '❌ Error al guardar' });
+      setMensaje({ tipo: 'danger', texto: 'Error al guardar' });
     }
   };
 
-  // --- VISTA 1: SELECCIÓN DE MATERIAS ---
   if (!materiaSeleccionada) {
     return (
       <div className="container mt-4">
-        <h3 className="fw-bold mb-4 text-primary">📚 Mis Materias Asignadas</h3>
+        <h3 className="fw-bold mb-4" style={{color: '#1B396A'}}>Materias Asignadas</h3>
         <div className="row">
           {materias.length === 0 && <p className="text-muted">No tienes materias asignadas aún.</p>}
           
@@ -99,7 +89,7 @@ export const MaestroView = () => {
                     className="btn btn-primary w-100 mt-3"
                     onClick={() => seleccionarMateria(materia)}
                   >
-                    Ver Grupo 👥
+                    Ver Grupo
                   </button>
                 </div>
               </div>
@@ -110,15 +100,14 @@ export const MaestroView = () => {
     );
   }
 
-  // --- VISTA 2: LISTA DE ALUMNOS (DETALLE) ---
   return (
     <div className="card shadow-sm border-0">
       <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center">
         <div>
           <button onClick={() => setMateriaSeleccionada(null)} className="btn btn-outline-secondary btn-sm me-3">
-            ⬅ Volver
+            Volver
           </button>
-          <span className="fw-bold h5 text-primary">{materiaSeleccionada.nombre}</span>
+          <span className="fw-bold h5" style={{color: '#1B396A'}}>{materiaSeleccionada.nombre}</span>
         </div>
         <span className="badge bg-light text-dark border">{materiaSeleccionada.codigo}</span>
       </div>

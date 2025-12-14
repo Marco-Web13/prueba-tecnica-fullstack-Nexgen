@@ -42,7 +42,7 @@ export const obtenerAlumnos = async (req, res) => {
     });
 
     const listaConNotas = await Promise.all(alumnos.map(async (alumno) => {
-      const Calificaciones = await Calificaciones.findOne({
+      const calificacionesEncontradas = await Calificaciones.findOne({
         where: { 
           alumno_id: alumno.id, 
           materia_id: materiaId //filtramos por materia
@@ -54,8 +54,8 @@ export const obtenerAlumnos = async (req, res) => {
         nombre: alumno.nombre,
         matricula: alumno.matricula,
         grupo: alumno.grupo,
-        nota: Calificaciones ? Calificaciones.nota : null,
-        observaciones: Calificaciones ? Calificaciones.observaciones : ''
+        nota: calificacionesEncontradas ? calificacionesEncontradas.nota : null,
+        observaciones: calificacionesEncontradas ? calificacionesEncontradas.observaciones : ''
       };
     }));
 
@@ -76,18 +76,18 @@ export const registrarCalificacion = async (req, res) => {
     if (!esMiMateria) return res.status(403).json({ message: 'No impartes esta materia' });
 
     // Buscar si ya existe
-    let Calificaciones = await Calificaciones.findOne({
+    let registroCalificacion = await Calificaciones.findOne({
       where: { alumno_id, materia_id }
     });
 
-    if (Calificaciones) {
+    if (registroCalificacion) {
       // EDITAR (UPDATE)
-      Calificaciones.nota = nota;
-      Calificaciones.observaciones = observaciones;
-      await Calificaciones.save();
+      registroCalificacion.nota = nota;
+      registroCalificacion.observaciones = observaciones;
+      await registroCalificacion.save();
     } else {
       // CREAR (INSERT)
-      Calificaciones = await Calificaciones.create({
+      registroCalificacion = await Calificaciones.create({
         alumno_id,
         materia_id,
         maestro_id: maestroId,

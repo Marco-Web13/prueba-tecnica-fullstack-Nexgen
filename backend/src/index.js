@@ -7,6 +7,7 @@ import authRoutes from "./routes/authRoutes.js"
 import "./models/index.js"
 import maestroRoutes from "./routes/maestroRoutes.js"
 import alumnoRoutes from "./routes/alumnoRoutes.js"
+import adminRoutes from "./routes/adminRoutes.js"
 
 dotenv.config()
 
@@ -17,7 +18,8 @@ app.use(cors())
 app.use(morgan('dev'))
 app.use('/api/auth', authRoutes)
 app.use('/api/maestro', maestroRoutes)
-app.use('/api/alumnos', alumnoRoutes);
+app.use('/api/alumnos', alumnoRoutes)
+app.use('/api/admin', adminRoutes);
 
 app.get("/", (req, res) => {
   res.send("API jalando al 100") 

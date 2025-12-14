@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate": "npx sequelize-cli db:migrate",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "seed": "node src/seeders/seed.js"
@@ -29,6 +30,7 @@
   "devDependencies": {
     "eslint": "^9.39.1",
     "nodemon": "^3.1.11",
-    "prettier": "^3.7.4"
+    "prettier": "^3.7.4",
+    "sequelize-cli": "^6.6.3"
   }
 }

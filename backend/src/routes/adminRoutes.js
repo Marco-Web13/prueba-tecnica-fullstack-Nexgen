@@ -4,7 +4,7 @@ import {
   obtenerMaterias, crearMateria, actualizarMateria, eliminarMateria,
   obtenerAlumnos, inscribirAlumno, actualizarAlumno, eliminarAlumno,
   asignarMateria,
-  obtenerReporteCompleto, deleteCalificacion
+  obtenerReporteCompleto, deleteCalificacion, inscribirAlumnoEnMateria
 } from '../controllers/adminController.js';
 import { verifyToken, authorizeRol } from '../middlewares/authMiddleware.js';
 
@@ -32,6 +32,7 @@ router.delete('/alumnos/:id', eliminarAlumno);
 
 // Asignaciones
 router.post('/maestros/:maestroId/materias', asignarMateria);
+router.post('/inscripciones', inscribirAlumnoEnMateria)
 
 // Reportes
 router.get('/reportes', obtenerReporteCompleto);

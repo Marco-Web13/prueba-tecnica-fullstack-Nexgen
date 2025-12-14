@@ -23,12 +23,10 @@ export const obtenerMaterias = async (req, res) => {
   }
 };
 
-//OBTENER ALUMNOS DE UNA MATERIA
 export const obtenerAlumnos = async (req, res) => {
   try {
     const { materiaId } = req.params;
     const maestroId = req.user.id;
-
     const asignacion = await Asignacion.findOne({
       where: { maestro_id: maestroId, materia_id: materiaId }
     });
@@ -37,15 +35,26 @@ export const obtenerAlumnos = async (req, res) => {
       return res.status(403).json({ message: 'No tienes asignada esta materia.' });
     }
 
-    const alumnos = await Alumno.findAll({
-        order: [['nombre', 'ASC']]
+    const materiaConAlumnos = await Materia.findByPk(materiaId, {
+      include: [
+        {
+          model: Alumno,
+          as: 'estudiantes', 
+          through: { attributes: [] } 
+        }
+      ]
     });
 
-    const listaConNotas = await Promise.all(alumnos.map(async (alumno) => {
+    if (!materiaConAlumnos) {
+      return res.status(404).json({ message: 'Materia no encontrada' });
+    }
+
+    const alumnosInscritos = materiaConAlumnos.estudiantes || [];
+    const listaConNotas = await Promise.all(alumnosInscritos.map(async (alumno) => {
       const calificacionesEncontradas = await Calificaciones.findOne({
         where: { 
           alumno_id: alumno.id, 
-          materia_id: materiaId //filtramos por materia
+          materia_id: materiaId 
         }
       });
       
@@ -59,13 +68,16 @@ export const obtenerAlumnos = async (req, res) => {
       };
     }));
 
+    listaConNotas.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
     res.json(listaConNotas);
 
   } catch (error) {
-    console.error(error);
+    console.error("Error en obtenerAlumnos:", error);
     res.status(500).json({ message: 'Error al obtener alumnos' });
   }
 };
+
 export const registrarCalificacion = async (req, res) => {
   try {
     const maestroId = req.user.id;
@@ -75,18 +87,18 @@ export const registrarCalificacion = async (req, res) => {
     const esMiMateria = await Asignacion.findOne({ where: { maestro_id: maestroId, materia_id } });
     if (!esMiMateria) return res.status(403).json({ message: 'No impartes esta materia' });
 
-    // Buscar si ya existe
+    // Buscar si ya existe calificación previa
     let registroCalificacion = await Calificaciones.findOne({
       where: { alumno_id, materia_id }
     });
 
     if (registroCalificacion) {
-      // EDITAR (UPDATE)
+      //UPDATE
       registroCalificacion.nota = nota;
       registroCalificacion.observaciones = observaciones;
       await registroCalificacion.save();
     } else {
-      // CREAR (INSERT)
+      //INSERT
       registroCalificacion = await Calificaciones.create({
         alumno_id,
         materia_id,

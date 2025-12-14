@@ -1,4 +1,4 @@
-import { Usuario, Materia, Asignacion, Alumno, Calificaciones } from '../models/index.js';
+import { Usuario, Materia, Asignacion, Alumno, Calificaciones, Inscripcion } from '../models/index.js';
 
 export const obtenerMaestros = async (req, res) => {
   const maestros = await Usuario.findAll({ where: { rol: 'MAESTRO' } });
@@ -115,10 +115,37 @@ export const asignarMateria = async (req, res) => {
   try {
     const { maestroId } = req.params;
     const { materia_id } = req.body;
+    const existeAsignacion = await Asignacion.findOne({
+      where: { 
+        maestro_id: maestroId, 
+        materia_id: materia_id 
+      }
+    });
+
+    if (existeAsignacion) {
+      return res.status(400).json({ message: 'El maestro ya imparte esta materia' });
+    }
+
     await Asignacion.create({ maestro_id: maestroId, materia_id });
     res.json({ message: 'Asignación creada' });
   } catch (error) {
-    res.status(500).json({ message: 'Error al asignar (¿Ya existe?)', error: error.message });
+    res.status(500).json({ message: 'Error al asignar', error: error.message });
+  }
+};
+// **************************
+
+export const inscribirAlumnoEnMateria = async (req, res) => {
+  try {
+    const { alumno_id, materia_id } = req.body;
+    const existe = await Inscripcion.findOne({ where: { alumno_id, materia_id } });
+    if (existe) {
+      return res.status(400).json({ message: 'El alumno ya está inscrito en esta materia' });
+    }
+
+    await Inscripcion.create({ alumno_id, materia_id });
+    res.json({ message: 'Alumno inscrito correctamente' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al inscribir alumno', error: error.message });
   }
 };
 

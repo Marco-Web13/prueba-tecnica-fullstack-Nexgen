@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import client from '../api/axios';
 
-// ICONOS SVG
+// --- ICONOS SVG ---
 const IconoEditar = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
     <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
@@ -47,6 +47,9 @@ export const ControlEscolarView = () => {
   const [formMateria, setFormMateria] = useState({ nombre: '', codigo: '', descripcion: '' });
   const [formAlumno, setFormAlumno] = useState({ nombre: '', matricula: '', fecha_nacimiento: '', grupo: '' });
   const [formAsignacion, setFormAsignacion] = useState({ maestro_id: '', materia_id: '' });
+  
+  // NUEVO: Estado para inscripciones de alumnos
+  const [formInscripcion, setFormInscripcion] = useState({ alumno_id: '', materia_id: '' });
 
   useEffect(() => { cargarDatos(); }, [activeTab]);
 
@@ -60,7 +63,7 @@ export const ControlEscolarView = () => {
         const res = await client.get('/admin/materias');
         setMaterias(res.data);
       }
-      if (activeTab === 'alumnos') {
+      if (activeTab === 'alumnos' || activeTab === 'asignaciones') { // Cargamos alumnos en asignaciones también
         const res = await client.get('/admin/alumnos');
         setAlumnos(res.data);
       }
@@ -88,6 +91,8 @@ export const ControlEscolarView = () => {
     setFormMaestro({ nombre: '', email: '', password: '' });
     setFormMateria({ nombre: '', codigo: '', descripcion: '' });
     setFormAlumno({ nombre: '', matricula: '', fecha_nacimiento: '', grupo: '' });
+    setFormAsignacion({ maestro_id: '', materia_id: '' });
+    setFormInscripcion({ alumno_id: '', materia_id: '' });
   };
 
   // --- CRUD FUNCTIONS ---
@@ -149,12 +154,22 @@ export const ControlEscolarView = () => {
     e.preventDefault();
     try {
       await client.post(`/admin/maestros/${formAsignacion.maestro_id}/materias`, { materia_id: formAsignacion.materia_id });
-      handleSuccess('Materia asignada correctamente');
+      handleSuccess('Materia asignada a Maestro correctamente');
+    } catch (err) { handleError(err); }
+  };
+
+  // NUEVO: Función para inscribir alumno
+  const inscribir = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      // Usamos la ruta que creamos en el backend
+      await client.post('/admin/inscripciones', formInscripcion);
+      handleSuccess('Alumno inscrito en la materia correctamente');
     } catch (err) { handleError(err); }
   };
 
   const inactivarNota = async (id: number) => {
-    if (!confirm('Eliminar esta calificación del reporte?')) return;
+    if (!confirm('¿Eliminar esta calificación del reporte?')) return;
     try { await client.delete(`/admin/calificaciones/${id}`); handleSuccess('Calificación Eliminada'); } catch (err) { handleError(err); }
   };
 
@@ -322,28 +337,64 @@ export const ControlEscolarView = () => {
           </div>
         )}
 
-        {/* --- TAB: ASIGNACIONES --- */}
+        {/* --- TAB: ASIGNACIONES (ACTUALIZADA) --- */}
         {activeTab === 'asignaciones' && (
-           <form onSubmit={vincular} className="p-5 bg-light border rounded text-center shadow-sm">
-             <h5 className="mb-4 text-primary">Vincular Maestro con Materia</h5>
-             <div className="row justify-content-center g-3">
-               <div className="col-md-4">
-                 <select className="form-select" required value={formAsignacion.maestro_id} onChange={e=>setFormAsignacion({...formAsignacion, maestro_id:e.target.value})}>
-                   <option value="">Selecciona Maestro...</option>
-                   {maestros.map(m=><option key={m.id} value={m.id}>{m.nombre}</option>)}
-                 </select>
-               </div>
-               <div className="col-md-4">
-                 <select className="form-select" required value={formAsignacion.materia_id} onChange={e=>setFormAsignacion({...formAsignacion, materia_id:e.target.value})}>
-                   <option value="">Selecciona Materia...</option>
-                   {materias.map(m=><option key={m.id} value={m.id}>{m.nombre} ({m.codigo})</option>)}
-                 </select>
-               </div>
-               <div className="col-md-2">
-                 <button className="btn btn-success w-100">Asignar</button>
-               </div>
+           <div className="row g-4">
+             <div className="col-md-6">
+                <div className="card h-100 shadow-sm border-0">
+                  <div className="card-header bg-white fw-bold" style={{ color: '#1B396A' }}>
+                    Asignar Docente
+                  </div>
+                  <div className="card-body">
+                    <form onSubmit={vincular}>
+                      <div className="mb-3">
+                        <label className="small fw-bold">Maestro</label>
+                        <select className="form-select" required value={formAsignacion.maestro_id} onChange={e=>setFormAsignacion({...formAsignacion, maestro_id:e.target.value})}>
+                          <option value="">Selecciona...</option>
+                          {maestros.map(m=><option key={m.id} value={m.id}>{m.nombre}</option>)}
+                        </select>
+                      </div>
+                      <div className="mb-3">
+                        <label className="small fw-bold">Materia</label>
+                        <select className="form-select" required value={formAsignacion.materia_id} onChange={e=>setFormAsignacion({...formAsignacion, materia_id:e.target.value})}>
+                          <option value="">Selecciona...</option>
+                          {materias.map(m=><option key={m.id} value={m.id}>{m.nombre} ({m.codigo})</option>)}
+                        </select>
+                      </div>
+                      <button className="btn btn-primary w-100">Vincular Docente</button>
+                    </form>
+                  </div>
+                </div>
              </div>
-           </form>
+
+             {/* DERECHA: Inscribir Alumno (Verde) */}
+             <div className="col-md-6">
+                <div className="card h-100 shadow-sm border-0">
+                  <div className="card-header bg-white fw-bold text-success">
+                    Inscribir Alumno
+                  </div>
+                  <div className="card-body">
+                    <form onSubmit={inscribir}>
+                      <div className="mb-3">
+                        <label className="small fw-bold">Alumno</label>
+                        <select className="form-select" required value={formInscripcion.alumno_id} onChange={e=>setFormInscripcion({...formInscripcion, alumno_id:e.target.value})}>
+                          <option value="">Selecciona...</option>
+                          {alumnos.map(a=><option key={a.id} value={a.id}>{a.nombre} ({a.matricula})</option>)}
+                        </select>
+                      </div>
+                      <div className="mb-3">
+                        <label className="small fw-bold">Materia</label>
+                        <select className="form-select" required value={formInscripcion.materia_id} onChange={e=>setFormInscripcion({...formInscripcion, materia_id:e.target.value})}>
+                          <option value="">Selecciona...</option>
+                          {materias.map(m=><option key={m.id} value={m.id}>{m.nombre}</option>)}
+                        </select>
+                      </div>
+                      <button className="btn btn-success w-100">Inscribir Alumno</button>
+                    </form>
+                  </div>
+                </div>
+             </div>
+           </div>
         )}
 
       </div>

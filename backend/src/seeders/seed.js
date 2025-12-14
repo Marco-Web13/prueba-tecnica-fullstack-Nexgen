@@ -1,5 +1,5 @@
 import sequelize from '../config/db.js';
-import { Usuario, Alumno, Materia, Asignacion } from '../models/index.js';
+import { Usuario, Alumno, Materia, Asignacion, Inscripcion } from '../models/index.js';
 
 const seedDatabase = async () => {
   try {
@@ -29,7 +29,7 @@ const seedDatabase = async () => {
 
     const maestro2 = await Usuario.create({
       nombre: 'Maestra Miel',
-      email: 'miel@gamail.com',
+      email: 'miel@gmail.com',
       password_hash: '1234',
       rol: 'MAESTRO'
     });
@@ -45,7 +45,7 @@ const seedDatabase = async () => {
     const programacion = await Materia.create({
       codigo: 'PROGRA',
       nombre: 'PROGRAMACION',
-      descripcion: 'Fundaments de la programacion',
+      descripcion: 'Fundamentos de la programacion',
       estatus: 1
     });
 
@@ -58,9 +58,9 @@ const seedDatabase = async () => {
     });
 
     const alumno2 = await Alumno.create({
-      nombre: 'Diego Alejandro',
-      matricula: '21170401',
-      fecha_nacimiento: '2003-06-20',
+      nombre: 'Poppy Meza',
+      matricula: 'GOD',
+      fecha_nacimiento: '2003-04-02',
       grupo: 'A'
     });
 
@@ -82,6 +82,15 @@ const seedDatabase = async () => {
       cupo_maximo: 10
     });
 
+    await Inscripcion.create({
+      alumno_id: alumno2.id,
+      materia_id: matematicas.id
+    });
+
+    await Inscripcion.create({
+      alumno_id: alumno1.id,
+      materia_id: programacion.id
+    });
     console.log("Base de datos poblada con éxito");
     process.exit(0)
   } catch (error) {

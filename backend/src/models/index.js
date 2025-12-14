@@ -3,6 +3,7 @@ import Alumno from './Alumno.js';
 import Materia from './Materia.js';
 import Calificaciones from './Calificaciones.js';
 import Asignacion from './Asignacion.js'
+import Inscripcion from './Inscripcion.js'
 
 Usuario.hasMany(Asignacion, { foreignKey: 'maestro_id' });
 Asignacion.belongsTo(Usuario, { foreignKey: 'maestro_id', as: 'maestro' });
@@ -23,4 +24,10 @@ Calificaciones.belongsTo(Materia, { foreignKey: 'materia_id', as: 'materia' });
 Usuario.hasMany(Calificaciones, { foreignKey: 'maestro_id' });
 Calificaciones.belongsTo(Usuario, { foreignKey: 'maestro_id', as: 'docente' });
 
-export { Usuario, Alumno, Materia, Calificaciones, Asignacion };
+Alumno.belongsToMany(Materia, { through: Inscripcion, foreignKey: 'alumno_id', as: 'clases' });
+Materia.belongsToMany(Alumno, { through: Inscripcion, foreignKey: 'materia_id', as: 'estudiantes' });
+
+Inscripcion.belongsTo(Alumno, { foreignKey: 'alumno_id' });
+Inscripcion.belongsTo(Materia, { foreignKey: 'materia_id' });
+
+export { Usuario, Alumno, Materia, Calificaciones, Asignacion, Inscripcion };

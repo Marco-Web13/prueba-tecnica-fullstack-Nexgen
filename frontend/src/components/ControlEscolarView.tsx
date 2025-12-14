@@ -154,8 +154,8 @@ export const ControlEscolarView = () => {
   };
 
   const inactivarNota = async (id: number) => {
-    if (!confirm('¿Ocultar esta calificación del reporte (Soft Delete)?')) return;
-    try { await client.delete(`/admin/calificaciones/${id}`); handleSuccess('Calificación ocultada'); } catch (err) { handleError(err); }
+    if (!confirm('Eliminar esta calificación del reporte?')) return;
+    try { await client.delete(`/admin/calificaciones/${id}`); handleSuccess('Calificación Eliminada'); } catch (err) { handleError(err); }
   };
 
   const promedioGeneral = reportes.length > 0 
@@ -205,7 +205,7 @@ export const ControlEscolarView = () => {
                       </td>
                     </tr>
                   ))}
-                  {reportes.length === 0 && <tr><td colSpan={6} className="text-center text-muted py-4">No hay calificaciones registradas aún.</td></tr>}
+                  {reportes.length === 0 && <tr><td colSpan={6} className="text-center text-muted py-4">No hay calificaciones registradas aún</td></tr>}
                 </tbody>
               </table>
             </div>

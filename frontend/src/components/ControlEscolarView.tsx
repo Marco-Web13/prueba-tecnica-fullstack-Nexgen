@@ -1,13 +1,28 @@
 import { useState, useEffect } from 'react';
 import client from '../api/axios';
 
+// ICONOS SVG
+const IconoEditar = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+    <path fillRule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/>
+  </svg>
+);
+
+const IconoBorrar = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
+  </svg>
+);
+
+// --- INTERFACES ---
 interface Maestro { id: number; nombre: string; email: string; }
 interface Materia { id: number; nombre: string; codigo: string; descripcion?: string; }
 interface Alumno { id: number; nombre: string; matricula: string; grupo: string; fecha_nacimiento?: string; }
-
 interface Reporte { 
   id: number; 
-  nota: string | number;
+  nota: string | number; 
   alumno: { nombre: string; matricula: string; grupo: string }; 
   materia: { nombre: string }; 
   docente: { nombre: string }; 
@@ -17,22 +32,23 @@ export const ControlEscolarView = () => {
   const [activeTab, setActiveTab] = useState<'reportes' | 'alumnos' | 'maestros' | 'materias' | 'asignaciones'>('reportes');
   const [mensaje, setMensaje] = useState<{ tipo: string, texto: string } | null>(null);
   
+  // --- DATOS ---
   const [maestros, setMaestros] = useState<Maestro[]>([]);
   const [materias, setMaterias] = useState<Materia[]>([]);
   const [alumnos, setAlumnos] = useState<Alumno[]>([]);
   const [reportes, setReportes] = useState<Reporte[]>([]);
 
+  // --- EDICIÓN ---
   const [modoEdicion, setModoEdicion] = useState(false);
   const [idEdicion, setIdEdicion] = useState<number | null>(null);
   
+  // --- FORMULARIOS ---
   const [formMaestro, setFormMaestro] = useState({ nombre: '', email: '', password: '' });
   const [formMateria, setFormMateria] = useState({ nombre: '', codigo: '', descripcion: '' });
   const [formAlumno, setFormAlumno] = useState({ nombre: '', matricula: '', fecha_nacimiento: '', grupo: '' });
   const [formAsignacion, setFormAsignacion] = useState({ maestro_id: '', materia_id: '' });
 
-  useEffect(() => {
-    cargarDatos();
-  }, [activeTab]);
+  useEffect(() => { cargarDatos(); }, [activeTab]);
 
   const cargarDatos = async () => {
     try {
@@ -55,14 +71,13 @@ export const ControlEscolarView = () => {
     } catch (error) { console.error("Error cargando datos", error); }
   };
 
-  // --- HANDLERS GENÉRICOS ---
   const handleSuccess = (msg: string) => {
     setMensaje({ tipo: 'success', texto: msg });
     setModoEdicion(false);
     setIdEdicion(null);
     limpiarForms();
     cargarDatos();
-    setTimeout(() => setMensaje(null), 2000); // Borrar mensaje a los 2 seg
+    setTimeout(() => setMensaje(null), 3000);
   };
 
   const handleError = (error: any) => {
@@ -75,6 +90,7 @@ export const ControlEscolarView = () => {
     setFormAlumno({ nombre: '', matricula: '', fecha_nacimiento: '', grupo: '' });
   };
 
+  // --- CRUD FUNCTIONS ---
   const guardarMaestro = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -138,8 +154,8 @@ export const ControlEscolarView = () => {
   };
 
   const inactivarNota = async (id: number) => {
-    if (!confirm('Eliminar esta calificación del reporte?')) return;
-    try { await client.delete(`/admin/calificaciones/${id}`); handleSuccess('Calificación eliminada'); } catch (err) { handleError(err); }
+    if (!confirm('¿Ocultar esta calificación del reporte (Soft Delete)?')) return;
+    try { await client.delete(`/admin/calificaciones/${id}`); handleSuccess('Calificación ocultada'); } catch (err) { handleError(err); }
   };
 
   const promedioGeneral = reportes.length > 0 
@@ -148,25 +164,24 @@ export const ControlEscolarView = () => {
 
   return (
     <div className="card shadow border-0">
-      {/* HEADER TABS */}
       <div className="card-header bg-white">
         <ul className="nav nav-tabs card-header-tabs">
-          <li className="nav-item"><button className={`nav-link ${activeTab==='reportes'?'active fw-bold text-primary':''}`} onClick={()=>setActiveTab('reportes')}>Reportes</button></li>
-          <li className="nav-item"><button className={`nav-link ${activeTab==='alumnos'?'active fw-bold text-primary':''}`} onClick={()=>setActiveTab('alumnos')}>Alumnos</button></li>
-          <li className="nav-item"><button className={`nav-link ${activeTab==='maestros'?'active fw-bold text-primary':''}`} onClick={()=>setActiveTab('maestros')}>Maestros</button></li>
-          <li className="nav-item"><button className={`nav-link ${activeTab==='materias'?'active fw-bold text-primary':''}`} onClick={()=>setActiveTab('materias')}>Materias</button></li>
-          <li className="nav-item"><button className={`nav-link ${activeTab==='asignaciones'?'active fw-bold text-primary':''}`} onClick={()=>setActiveTab('asignaciones')}>Asignar</button></li>
+          <li className="nav-item"><button className={`nav-link ${activeTab==='reportes'?'active fw-bold' :''}`} style={{ color: activeTab === 'reportes' ? '#1B396A' : '' }} onClick={()=>setActiveTab('reportes')}>Reporte Global</button></li>
+          <li className="nav-item"><button className={`nav-link ${activeTab==='alumnos'?'active fw-bold ':''}`} style={{ color: activeTab === 'alumnos' ? '#1B396A' : '' }} onClick={()=>setActiveTab('alumnos')}>Alumnos</button></li>
+          <li className="nav-item"><button className={`nav-link ${activeTab==='maestros'?'active fw-bold ':''}`} style={{ color: activeTab === 'maestros' ? '#1B396A' : '' }} onClick={()=>setActiveTab('maestros')}>Maestros</button></li>
+          <li className="nav-item"><button className={`nav-link ${activeTab==='materias'?'active fw-bold ':''}`} style={{ color: activeTab === 'materias' ? '#1B396A' : '' }} onClick={()=>setActiveTab('materias')}>Materias</button></li>
+          <li className="nav-item"><button className={`nav-link ${activeTab==='asignaciones'?'active fw-bold ':''}`} style={{ color: activeTab === 'asignaciones' ? '#1B396A' : '' }} onClick={()=>setActiveTab('asignaciones')}>Asignar</button></li>
         </ul>
       </div>
 
       <div className="card-body p-4">
         {mensaje && <div className={`alert alert-${mensaje.tipo} alert-dismissible fade show`}>{mensaje.texto}<button className="btn-close" onClick={()=>setMensaje(null)}></button></div>}
 
-        {/* TAB: REPORTES*/}
+        {/* --- TAB: REPORTES --- */}
         {activeTab === 'reportes' && (
           <div>
             <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="fw-bold" style={{color: '#1B396A'}}>Reporte Académico Global</h5>
+              <h5 className="fw-bold" style={{ color: '#1B396A' }}>Reporte Académico Global</h5>
               <div className="bg-light p-2 rounded border shadow-sm">
                 <span className="fw-bold text-muted me-2">Promedio General:</span>
                 <span className={`badge ${Number(promedioGeneral) >= 70 ? 'bg-success' : 'bg-danger'} fs-5`}>{promedioGeneral}</span>
@@ -184,7 +199,9 @@ export const ControlEscolarView = () => {
                       <td className="text-muted small">{r.docente.nombre}</td>
                       <td className="fw-bold text-center">{r.nota}</td>
                       <td className="text-center">
-                        <button className="btn btn-outline-danger btn-sm py-0" title="Inactivar" onClick={()=>inactivarNota(r.id)}>🗑️</button>
+                        <button className="btn btn-outline-danger btn-sm py-1 px-2" title="Inactivar" onClick={()=>inactivarNota(r.id)}>
+                            <IconoBorrar />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -195,11 +212,11 @@ export const ControlEscolarView = () => {
           </div>
         )}
 
-        {/* TABLA ALUMNOS*/}
+        {/* --- TAB: ALUMNOS --- */}
         {activeTab === 'alumnos' && (
           <div>
             <div className="bg-light p-3 rounded border mb-4">
-              <h6 className="fw-bold mb-3">{modoEdicion ? '✏️ Editando Alumno' : 'Nuevo Alumno'}</h6>
+              <h6 className="fw-bold mb-3">{modoEdicion ? 'Editando Alumno' : 'Nuevo Alumno'}</h6>
               <form onSubmit={guardarAlumno} className="row g-2 align-items-end">
                 <div className="col-md-3"><input placeholder="Nombre" className="form-control form-control-sm" required value={formAlumno.nombre} onChange={e=>setFormAlumno({...formAlumno, nombre:e.target.value})} /></div>
                 <div className="col-md-2"><input placeholder="Matrícula" className="form-control form-control-sm" required value={formAlumno.matricula} onChange={e=>setFormAlumno({...formAlumno, matricula:e.target.value})} /></div>
@@ -219,8 +236,12 @@ export const ControlEscolarView = () => {
                   <tr key={a.id}>
                     <td className="font-monospace">{a.matricula}</td><td>{a.nombre}</td><td>{a.grupo}</td>
                     <td>
-                      <button className="btn btn-link btn-sm p-0 me-2" onClick={()=>{setModoEdicion(true); setIdEdicion(a.id); setFormAlumno(a as any);}}>✏️</button>
-                      <button className="btn btn-link btn-sm p-0 text-danger" onClick={()=>borrarAlumno(a.id)}>🗑️</button>
+                      <button className="btn btn-link btn-sm p-0 me-3 text-primary" title="Editar" onClick={()=>{setModoEdicion(true); setIdEdicion(a.id); setFormAlumno(a as any);}}>
+                        <IconoEditar />
+                      </button>
+                      <button className="btn btn-link btn-sm p-0 text-danger" title="Eliminar" onClick={()=>borrarAlumno(a.id)}>
+                        <IconoBorrar />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -233,7 +254,7 @@ export const ControlEscolarView = () => {
         {activeTab === 'maestros' && (
           <div>
             <div className="bg-light p-3 rounded border mb-4">
-              <h6 className="fw-bold mb-3">{modoEdicion ? '✏️ Editando Maestro' : '➕ Contratar Maestro'}</h6>
+              <h6 className="fw-bold mb-3">{modoEdicion ? 'Editando Maestro' : 'Contratar Maestro'}</h6>
               <form onSubmit={guardarMaestro} className="row g-2 align-items-end">
                 <div className="col-md-4"><input placeholder="Nombre Completo" className="form-control form-control-sm" required value={formMaestro.nombre} onChange={e=>setFormMaestro({...formMaestro, nombre:e.target.value})} /></div>
                 <div className="col-md-4"><input type="email" placeholder="Correo" className="form-control form-control-sm" required value={formMaestro.email} onChange={e=>setFormMaestro({...formMaestro, email:e.target.value})} /></div>
@@ -251,8 +272,12 @@ export const ControlEscolarView = () => {
                   <tr key={m.id}>
                     <td>{m.nombre}</td><td>{m.email}</td>
                     <td>
-                      <button className="btn btn-link btn-sm p-0 me-2" onClick={()=>{setModoEdicion(true); setIdEdicion(m.id); setFormMaestro({...m, password:''});}}>✏️</button>
-                      <button className="btn btn-link btn-sm p-0 text-danger" onClick={()=>borrarMaestro(m.id)}>🗑️</button>
+                      <button className="btn btn-link btn-sm p-0 me-3 text-primary" title="Editar" onClick={()=>{setModoEdicion(true); setIdEdicion(m.id); setFormMaestro({...m, password:''});}}>
+                        <IconoEditar />
+                      </button>
+                      <button className="btn btn-link btn-sm p-0 text-danger" title="Eliminar" onClick={()=>borrarMaestro(m.id)}>
+                        <IconoBorrar />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -265,7 +290,7 @@ export const ControlEscolarView = () => {
         {activeTab === 'materias' && (
           <div>
              <div className="bg-light p-3 rounded border mb-4">
-              <h6 className="fw-bold mb-3">{modoEdicion ? '✏️ Editando Materia' : '➕ Nueva Materia'}</h6>
+              <h6 className="fw-bold mb-3">{modoEdicion ? 'Editando Materia' : 'Nueva Materia'}</h6>
               <form onSubmit={guardarMateria} className="row g-2 align-items-end">
                 <div className="col-md-4"><input placeholder="Nombre Materia" className="form-control form-control-sm" required value={formMateria.nombre} onChange={e=>setFormMateria({...formMateria, nombre:e.target.value})} /></div>
                 <div className="col-md-2"><input placeholder="Código" className="form-control form-control-sm" required value={formMateria.codigo} onChange={e=>setFormMateria({...formMateria, codigo:e.target.value})} /></div>
@@ -283,8 +308,12 @@ export const ControlEscolarView = () => {
                   <tr key={m.id}>
                     <td className="font-monospace text-primary">{m.codigo}</td><td>{m.nombre}</td>
                     <td>
-                      <button className="btn btn-link btn-sm p-0 me-2" onClick={()=>{setModoEdicion(true); setIdEdicion(m.id); setFormMateria(m as any);}}>✏️</button>
-                      <button className="btn btn-link btn-sm p-0 text-danger" onClick={()=>borrarMateria(m.id)}>🗑️</button>
+                      <button className="btn btn-link btn-sm p-0 me-3 text-primary" title="Editar" onClick={()=>{setModoEdicion(true); setIdEdicion(m.id); setFormMateria(m as any);}}>
+                        <IconoEditar />
+                      </button>
+                      <button className="btn btn-link btn-sm p-0 text-danger" title="Eliminar" onClick={()=>borrarMateria(m.id)}>
+                        <IconoBorrar />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -296,7 +325,7 @@ export const ControlEscolarView = () => {
         {/* --- TAB: ASIGNACIONES --- */}
         {activeTab === 'asignaciones' && (
            <form onSubmit={vincular} className="p-5 bg-light border rounded text-center shadow-sm">
-             <h5 className="mb-4 text-primary">🔗 Vincular Maestro con Materia</h5>
+             <h5 className="mb-4 text-primary">Vincular Maestro con Materia</h5>
              <div className="row justify-content-center g-3">
                <div className="col-md-4">
                  <select className="form-select" required value={formAsignacion.maestro_id} onChange={e=>setFormAsignacion({...formAsignacion, maestro_id:e.target.value})}>

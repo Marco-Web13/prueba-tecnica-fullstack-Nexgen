@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import client from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import logoImg from '../styles/iconNexgen.png';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -38,7 +39,12 @@ export const LoginPage = () => {
           
           {/* LOGO */}
           <div className="text-center mb-4">
-            <img src="/logo-nexgen.png" alt="Nexgen Systems Logo" style={{ width: '120px' }} />
+            <img 
+              src={logoImg} 
+              alt="Logo nexgen" 
+              className="img-fluid"
+              style={{ maxHeight: '120px' }} 
+            />
           </div>
 
           <h2 className="text-center fw-bold mb-2" style={{ color: '#1B396A' }}>NEXGEN SYSTEMS</h2>

@@ -38,7 +38,11 @@ docker-compose up --build
 ---
 
 ## **3. Migraciones y Seeders**
-Reiniciar Base de Datos (Seeders) Si deseas borrar la base de datos y volver a llenarla con los datos de prueba (Admin, Maestros, Alumnos), ejecuta:
+Ejecutar migraciones 
+```bash
+docker-compose exec backend npx sequelize-cli db:migrate
+```
+Reiniciar Base de Datos (Seeders) para llenarla con los datos de prueba (Admin, Maestros, Alumnos), ejecuta:
 ```bash
 docker-compose exec backend npm run seed
 ```
@@ -52,14 +56,18 @@ docker-compose exec backend npm run seed
 cd backend
 npm install
 ```
+### **4.2 Ejecutar migraciones**
+```bash
+npx sequelize-cli db:migrate
+```
 
-### **4.2 Poblar Base de Datos (Seeders)**
+### **4.3 Poblar Base de Datos (Seeders)**
 Para reiniciar la base de datos y cargar los usuarios de prueba, ejecuta:
 ```bash
 npm run seed
 ```
 
-### **4.3 Iniciar Servidor**
+### **4.4 Iniciar Servidor**
 ```bash
 npm run dev
 ```
@@ -87,10 +95,13 @@ npm run dev
 El sistema crea automáticamente los siguientes usuarios:
 
 - **Administrador**  
-  📧 `admin@escuela.com`  
-  🔑 `123456`
+  `admin@gmail.com`  
+  `1234`
 
 - **Maestro**  
-  📧 `walter@escuela.com`  
-  🔑 `123456`
+  `jirafales@gmail.com`  
+  `1234`
 
+- **Maestro 2**  
+  `miel@gmail.com`  
+  `1234`

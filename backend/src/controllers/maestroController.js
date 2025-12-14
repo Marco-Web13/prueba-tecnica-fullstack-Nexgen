@@ -1,51 +1,105 @@
-import { Alumno, Materia, Calificaciones } from '../models/index.js';
+import { Alumno, Calificacion, Materia, Asignacion } from '../models/index.js';
 
-//Obtener lista de alumnos para calificar
-export const obtenerAlumnos = async (req, res) => {
+export const obtenerMaterias = async (req, res) => {
   try {
-
-    const alumnos = await Alumno.findAll();
-    res.json(alumnos);
-
-  } catch (error) {
-    res.status(500).json({ message: "Error al obtener alumnos" });
-  }
-};
-
-//Registrar y Actualizar Calificaciones
-export const registrarCalificacion = async (req, res) => {
-  try {
-    const { alumno_id, materia_id, nota, observaciones } = req.body;
-    const maestro_id = req.usuario.id;
-
-    const materia = await Materia.findByPk(materia_id);
-    if (!materia) return res.status(404).json({ message: "Materia no encontrada" });
-    if (nota < 0 || nota > 100) {
-      return res.status(400).json({ message: "La calificacion debe estar entre 0 y 100" });
-    }
-
-    let calificacion = await Calificaciones.findOne({
-      where: { alumno_id, materia_id, maestro_id }
+    const maestroId = req.user.id;
+    const asignaciones = await Asignacion.findAll({
+      where: { maestro_id: maestroId },
+      include: [
+        {
+          model: Materia,
+          as: 'materia',
+          attributes: ['id', 'nombre', 'codigo', 'descripcion']
+        }
+      ]
     });
 
-    if (calificacion) {
-      calificacion.nota = nota;
-      calificacion.observaciones = observaciones;
-      await calificacion.save();
-      return res.json({ message: "Calificación actualizada", calificacion });
-    } else {
-      calificacion = await Calificaciones.create({
-        alumno_id,
-        materia_id,
-        maestro_id,
-        nota,
-        observaciones
-      })
-      return res.status(201).json({ message: "Calificación registrada correctamente", calificacion });
-    }
+    const materias = asignaciones.map(a => a.materia);
+    res.json(materias);
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error al registrar calificación" });
+    res.status(500).json({ message: 'Error al obtener materias' });
+  }
+};
+
+//OBTENER ALUMNOS DE UNA MATERIA
+export const obtenerAlumnos = async (req, res) => {
+  try {
+    const { materiaId } = req.params;
+    const maestroId = req.user.id;
+
+    const asignacion = await Asignacion.findOne({
+      where: { maestro_id: maestroId, materia_id: materiaId }
+    });
+
+    if (!asignacion) {
+      return res.status(403).json({ message: 'No tienes asignada esta materia.' });
+    }
+
+    const alumnos = await Alumno.findAll({
+        order: [['nombre', 'ASC']]
+    });
+
+    const listaConNotas = await Promise.all(alumnos.map(async (alumno) => {
+      const calificacion = await Calificacion.findOne({
+        where: { 
+          alumno_id: alumno.id, 
+          materia_id: materiaId //filtramos por materia
+        }
+      });
+      
+      return {
+        id: alumno.id,
+        nombre: alumno.nombre,
+        matricula: alumno.matricula,
+        grupo: alumno.grupo,
+        nota: calificacion ? calificacion.nota : null,
+        observaciones: calificacion ? calificacion.observaciones : ''
+      };
+    }));
+
+    res.json(listaConNotas);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al obtener alumnos' });
+  }
+};
+export const registrarCalificacion = async (req, res) => {
+  try {
+    const maestroId = req.user.id;
+    const { alumno_id, materia_id, nota, observaciones } = req.body; 
+
+    // Validar Asignación
+    const esMiMateria = await Asignacion.findOne({ where: { maestro_id: maestroId, materia_id } });
+    if (!esMiMateria) return res.status(403).json({ message: 'No impartes esta materia' });
+
+    // Buscar si ya existe
+    let calificacion = await Calificacion.findOne({
+      where: { alumno_id, materia_id }
+    });
+
+    if (calificacion) {
+      // EDITAR (UPDATE)
+      calificacion.nota = nota;
+      calificacion.observaciones = observaciones;
+      await calificacion.save();
+    } else {
+      // CREAR (INSERT)
+      calificacion = await Calificacion.create({
+        alumno_id,
+        materia_id,
+        maestro_id: maestroId,
+        nota,
+        observaciones
+      });
+    }
+
+    res.json({ message: 'Calificación guardada exitosamente' });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al calificar' });
   }
 };

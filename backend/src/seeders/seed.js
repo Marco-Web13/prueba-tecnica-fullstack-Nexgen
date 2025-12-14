@@ -1,8 +1,12 @@
 import sequelize from '../config/db.js';
-import { Usuario, Alumno, Materia, Calificaciones } from '../models/index.js';
+import { Usuario, Alumno, Materia, Asignacion } from '../models/index.js';
 
 const seedDatabase = async () => {
   try {
+
+    const usuariosExistentes = await Usuario.count();
+    if (usuariosExistentes > 0) return
+
     await sequelize.authenticate();
     await sequelize.sync({ force: true }); 
 
@@ -38,10 +42,10 @@ const seedDatabase = async () => {
       estatus: 1
     });
 
-    const historia = await Materia.create({
-      codigo: 'HISTO',
-      nombre: 'Historia',
-      descripcion: 'Eventos del siglo XIX',
+    const programacion = await Materia.create({
+      codigo: 'PROGRA',
+      nombre: 'PROGRAMACION',
+      descripcion: 'Fundaments de la programacion',
       estatus: 1
     });
 
@@ -58,6 +62,24 @@ const seedDatabase = async () => {
       matricula: '21170401',
       fecha_nacimiento: '2003-06-20',
       grupo: 'A'
+    });
+
+    await Asignacion.create({
+      maestro_id: maestro1.id,
+      materia_id: matematicas.id,
+      cupo_maximo: 10
+    });
+
+    await Asignacion.create({
+      maestro_id: maestro2.id,
+      materia_id: programacion.id,
+      cupo_maximo: 10
+    });
+    
+    await Asignacion.create({
+      maestro_id: maestro1.id,
+      materia_id: programacion.id,
+      cupo_maximo: 10
     });
 
     console.log("Base de datos poblada con éxito");

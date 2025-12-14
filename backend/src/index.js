@@ -29,7 +29,7 @@ const startServer = async () => {
     await sequelize.authenticate() 
     console.log("Conexión a la base de datos exitosa") 
 
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ force: true });
     console.log("Tablas sincronizadas correctamente");  
 
     app.listen(3000, () => {    

@@ -1,67 +1,129 @@
 import { useEffect, useState } from 'react';
 import client from '../api/axios';
 
-interface Alumno {
+interface Materia {
+  id: number;
+  nombre: string;
+  codigo: string;
+  descripcion: string;
+}
+
+interface AlumnoConNota {
   id: number;
   nombre: string;
   matricula: string;
+  grupo: string;
+  nota: number | null;
+  observaciones: string;
 }
 
 export const MaestroView = () => {
-  const [alumnos, setAlumnos] = useState<Alumno[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Estado de navegación
+  const [materias, setMaterias] = useState<Materia[]>([]);
+  const [materiaSeleccionada, setMateriaSeleccionada] = useState<Materia | null>(null);
   
-  const [alumnoSeleccionado, setAlumnoSeleccionado] = useState<Alumno | null>(null);
-  const [nota, setNota] = useState('');
-  const [observaciones, setObservaciones] = useState('');
-  const [mensaje, setMensaje] = useState<{ tipo: 'success' | 'danger', texto: string } | null>(null);
+  // Estado de datos
+  const [alumnos, setAlumnos] = useState<AlumnoConNota[]>([]);
+  const [loading, setLoading] = useState(false);
 
+  // Estado del formulario de calificación
+  const [alumnoAEditar, setAlumnoAEditar] = useState<AlumnoConNota | null>(null);
+  const [notaInput, setNotaInput] = useState('');
+  const [obsInput, setObsInput] = useState('');
+  const [mensaje, setMensaje] = useState<{tipo: string, texto: string} | null>(null);
+
+  // 1. Cargar materias al inicio
   useEffect(() => {
-    const cargarAlumnos = async () => {
-      try {
-        const res = await client.get('/maestro/alumnos');
-        setAlumnos(res.data);
-      } catch (error) {
-        console.error("Error cargando alumnos", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    cargarAlumnos();
+    client.get('/maestro/materias')
+      .then(res => setMaterias(res.data))
+      .catch(err => console.error(err));
   }, []);
 
-  //Función para enviar la calificación
-  const handleCalificar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!alumnoSeleccionado) return;
-
+  // 2. Cargar alumnos cuando se selecciona una materia
+  const seleccionarMateria = async (materia: Materia) => {
+    setLoading(true);
+    setMateriaSeleccionada(materia);
+    setAlumnos([]); // Limpiar tabla anterior
     try {
-      await client.post('/maestro/calificaciones', {
-        alumno_id: alumnoSeleccionado.id,
-        materia_id: 1,
-        nota: Number(nota),
-        observaciones
-      });
-
-      setMensaje({ tipo: 'success', texto: `Calificación guardada para ${alumnoSeleccionado.nombre}` });
-      
-      // Limpiar formulario
-      setAlumnoSeleccionado(null);
-      setNota('');
-      setObservaciones('');
-
+      const res = await client.get(`/maestro/materias/${materia.id}/alumnos`);
+      setAlumnos(res.data);
     } catch (error) {
-      setMensaje({ tipo: 'danger', texto: 'Error al guardar la calificación' });
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  // 3. Guardar Calificación
+  const handleGuardarNota = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!alumnoAEditar || !materiaSeleccionada) return;
+
+    try {
+      await client.post('/maestro/calificaciones', {
+        alumno_id: alumnoAEditar.id,
+        materia_id: materiaSeleccionada.id,
+        nota: Number(notaInput),
+        observaciones: obsInput
+      });
+
+      setMensaje({ tipo: 'success', texto: '✅ Calificación guardada' });
+      
+      // Recargar la lista para ver el cambio reflejado
+      const res = await client.get(`/maestro/materias/${materiaSeleccionada.id}/alumnos`);
+      setAlumnos(res.data);
+      
+      // Cerrar formulario
+      setAlumnoAEditar(null);
+    } catch (error) {
+      setMensaje({ tipo: 'danger', texto: '❌ Error al guardar' });
+    }
+  };
+
+  // --- VISTA 1: SELECCIÓN DE MATERIAS ---
+  if (!materiaSeleccionada) {
+    return (
+      <div className="container mt-4">
+        <h3 className="fw-bold mb-4 text-primary">📚 Mis Materias Asignadas</h3>
+        <div className="row">
+          {materias.length === 0 && <p className="text-muted">No tienes materias asignadas aún.</p>}
+          
+          {materias.map(materia => (
+            <div key={materia.id} className="col-md-4 mb-4">
+              <div className="card h-100 shadow-sm hover-effect border-0">
+                <div className="card-body">
+                  <h5 className="card-title fw-bold text-dark">{materia.nombre}</h5>
+                  <h6 className="card-subtitle mb-2 text-muted">{materia.codigo}</h6>
+                  <p className="card-text small">{materia.descripcion}</p>
+                  <button 
+                    className="btn btn-primary w-100 mt-3"
+                    onClick={() => seleccionarMateria(materia)}
+                  >
+                    Ver Grupo 👥
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // --- VISTA 2: LISTA DE ALUMNOS (DETALLE) ---
   return (
     <div className="card shadow-sm border-0">
-      <div className="card-header bg-white py-3">
-        <h4 className="mb-0 fw-bold" style={{color: '#1B396A'}}>Calificaciones</h4>
+      <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <div>
+          <button onClick={() => setMateriaSeleccionada(null)} className="btn btn-outline-secondary btn-sm me-3">
+            ⬅ Volver
+          </button>
+          <span className="fw-bold h5 text-primary">{materiaSeleccionada.nombre}</span>
+        </div>
+        <span className="badge bg-light text-dark border">{materiaSeleccionada.codigo}</span>
       </div>
+
       <div className="card-body">
-        
         {mensaje && (
           <div className={`alert alert-${mensaje.tipo} alert-dismissible fade show`} role="alert">
             {mensaje.texto}
@@ -69,85 +131,74 @@ export const MaestroView = () => {
           </div>
         )}
 
-        {/* SI HAY UN ALUMNO SELECCIONADO, MOSTRAMOS EL FORMULARIO */}
-        {alumnoSeleccionado ? (
-          <div className="bg-light p-4 rounded mb-4 border">
-            <h5 className="fw-bold mb-3">Calificando a: <span className="text-primary">{alumnoSeleccionado.nombre}</span></h5>
-            <form onSubmit={handleCalificar}>
-              <div className="row">
-                <div className="col-md-4 mb-3">
-                  <label className="form-label fw-bold small">Nota (0-100)</label>
-                  <input 
-                    type="number" 
-                    className="form-control" 
-                    min="0" max="100" 
-                    value={nota}
-                    onChange={e => setNota(e.target.value)}
-                    required 
-                  />
-                </div>
-                <div className="col-md-8 mb-3">
-                  <label className="form-label fw-bold small">Observaciones</label>
-                  <input 
-                    type="text" 
-                    className="form-control" 
-                    placeholder="Ej. Excelente desempeño..." 
-                    value={observaciones}
-                    onChange={e => setObservaciones(e.target.value)}
-                  />
-                </div>
+        {/* FORMULARIO EDITAR */}
+        {alumnoAEditar && (
+          <div className="bg-light p-4 rounded mb-4 border border-primary">
+            <h5 className="fw-bold">Calificando a: {alumnoAEditar.nombre}</h5>
+            <form onSubmit={handleGuardarNota} className="d-flex gap-3 align-items-end flex-wrap">
+              <div>
+                <label className="form-label small fw-bold">Nota (0-100)</label>
+                <input 
+                  type="number" className="form-control" min="0" max="100" required
+                  value={notaInput} onChange={e => setNotaInput(e.target.value)}
+                />
               </div>
-              <div className="d-flex gap-2">
-                <button type="submit" className="btn btn-tec">Guardar Calificación</button>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  onClick={() => setAlumnoSeleccionado(null)}
-                >
-                  Cancelar
-                </button>
+              <div className="flex-grow-1">
+                <label className="form-label small fw-bold">Observaciones</label>
+                <input 
+                  type="text" className="form-control" placeholder="Opcional..."
+                  value={obsInput} onChange={e => setObsInput(e.target.value)}
+                />
               </div>
+              <button type="submit" className="btn btn-success">Guardar</button>
+              <button type="button" className="btn btn-secondary" onClick={() => setAlumnoAEditar(null)}>Cancelar</button>
             </form>
           </div>
-        ) : null}
+        )}
 
         {/* TABLA DE ALUMNOS */}
-        <h5 className="mb-3 text-muted">Lista de Alumnos Asignados</h5>
-        {loading ? (
-          <p>Cargando...</p>
-        ) : (
+        {loading ? <p className="text-center py-5">Cargando alumnos...</p> : (
           <div className="table-responsive">
             <table className="table table-hover align-middle">
               <thead className="table-light">
                 <tr>
-                  <th>ID</th>
                   <th>Matrícula</th>
                   <th>Nombre</th>
+                  <th>Grupo</th>
+                  <th className="text-center">Calificación</th>
                   <th className="text-end">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {alumnos.map(alumno => (
-                  <tr key={alumno.id}>
-                    <td>{alumno.id}</td>
-                    <td><span className="badge bg-secondary">{alumno.matricula}</span></td>
-                    <td className="fw-bold">{alumno.nombre}</td>
+                {alumnos.map(alum => (
+                  <tr key={alum.id}>
+                    <td><span className="font-monospace text-muted">{alum.matricula}</span></td>
+                    <td className="fw-bold">{alum.nombre}</td>
+                    <td><span className="badge bg-secondary">{alum.grupo}</span></td>
+                    <td className="text-center">
+                      {alum.nota !== null ? (
+                        <span className={`badge ${alum.nota >= 70 ? 'bg-success' : 'bg-danger'} p-2`}>
+                          {alum.nota}
+                        </span>
+                      ) : <span className="text-muted small">- Sin nota -</span>}
+                    </td>
                     <td className="text-end">
                       <button 
                         className="btn btn-outline-primary btn-sm"
                         onClick={() => {
-                          setAlumnoSeleccionado(alumno);
-                          setMensaje(null); // Limpiar mensajes viejos
+                          setAlumnoAEditar(alum);
+                          setNotaInput(alum.nota ? String(alum.nota) : '');
+                          setObsInput(alum.observaciones || '');
+                          setMensaje(null);
                         }}
                       >
-                        Calificar
+                        {alum.nota !== null ? 'Editar' : 'Calificar'}
                       </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {alumnos.length === 0 && <p className="text-center text-muted mt-3">No hay alumnos registrados actualmente</p>}
           </div>
         )}
       </div>

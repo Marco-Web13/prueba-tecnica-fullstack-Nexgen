@@ -1,4 +1,4 @@
-import { Alumno, Calificacion, Materia, Asignacion } from '../models/index.js';
+import { Alumno, Calificaciones, Materia, Asignacion } from '../models/index.js';
 
 export const obtenerMaterias = async (req, res) => {
   try {
@@ -42,7 +42,7 @@ export const obtenerAlumnos = async (req, res) => {
     });
 
     const listaConNotas = await Promise.all(alumnos.map(async (alumno) => {
-      const calificacion = await Calificacion.findOne({
+      const Calificaciones = await Calificaciones.findOne({
         where: { 
           alumno_id: alumno.id, 
           materia_id: materiaId //filtramos por materia
@@ -54,8 +54,8 @@ export const obtenerAlumnos = async (req, res) => {
         nombre: alumno.nombre,
         matricula: alumno.matricula,
         grupo: alumno.grupo,
-        nota: calificacion ? calificacion.nota : null,
-        observaciones: calificacion ? calificacion.observaciones : ''
+        nota: Calificaciones ? Calificaciones.nota : null,
+        observaciones: Calificaciones ? Calificaciones.observaciones : ''
       };
     }));
 
@@ -76,18 +76,18 @@ export const registrarCalificacion = async (req, res) => {
     if (!esMiMateria) return res.status(403).json({ message: 'No impartes esta materia' });
 
     // Buscar si ya existe
-    let calificacion = await Calificacion.findOne({
+    let Calificaciones = await Calificaciones.findOne({
       where: { alumno_id, materia_id }
     });
 
-    if (calificacion) {
+    if (Calificaciones) {
       // EDITAR (UPDATE)
-      calificacion.nota = nota;
-      calificacion.observaciones = observaciones;
-      await calificacion.save();
+      Calificaciones.nota = nota;
+      Calificaciones.observaciones = observaciones;
+      await Calificaciones.save();
     } else {
       // CREAR (INSERT)
-      calificacion = await Calificacion.create({
+      Calificaciones = await Calificaciones.create({
         alumno_id,
         materia_id,
         maestro_id: maestroId,

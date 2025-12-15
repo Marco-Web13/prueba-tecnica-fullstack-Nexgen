@@ -166,6 +166,28 @@ export const obtenerReporteCompleto = async (req, res) => {
   }
 };
 
+export const actualizarCalificacionAdmin = async (req, res) => {
+  try {
+    const { id } = req.params; // ID de la calificación
+    const { nota, observaciones } = req.body;
+
+    const calificacion = await Calificaciones.findByPk(id);
+    if (!calificacion) {
+      return res.status(404).json({ message: 'Calificación no encontrada' });
+    }
+
+    calificacion.nota = nota;
+    if (observaciones !== undefined) calificacion.observaciones = observaciones;
+    
+    await calificacion.save();
+
+    res.json({ message: 'Calificación actualizada correctamente' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al actualizar calificación' });
+  }
+};
+
 // Soft Delete de calificación
 export const deleteCalificacion = async (req, res) => {
   try {

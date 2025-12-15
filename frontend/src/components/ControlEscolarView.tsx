@@ -23,6 +23,7 @@ interface Alumno { id: number; nombre: string; matricula: string; grupo: string;
 interface Reporte { 
   id: number; 
   nota: string | number; 
+  observaciones?: string; // Agregamos observaciones
   alumno: { nombre: string; matricula: string; grupo: string }; 
   materia: { nombre: string }; 
   docente: { nombre: string }; 
@@ -38,17 +39,20 @@ export const ControlEscolarView = () => {
   const [alumnos, setAlumnos] = useState<Alumno[]>([]);
   const [reportes, setReportes] = useState<Reporte[]>([]);
 
-  // --- EDICIÓN ---
+  // --- EDICIÓN ENTIDADES ---
   const [modoEdicion, setModoEdicion] = useState(false);
   const [idEdicion, setIdEdicion] = useState<number | null>(null);
   
+  // --- EDICIÓN DE CALIFICACIÓN (MODAL) ---
+  const [editandoNota, setEditandoNota] = useState<Reporte | null>(null);
+  const [nuevaNota, setNuevaNota] = useState('');
+  const [nuevaObservacion, setNuevaObservacion] = useState('');
+
   // --- FORMULARIOS ---
   const [formMaestro, setFormMaestro] = useState({ nombre: '', email: '', password: '' });
   const [formMateria, setFormMateria] = useState({ nombre: '', codigo: '', descripcion: '' });
   const [formAlumno, setFormAlumno] = useState({ nombre: '', matricula: '', fecha_nacimiento: '', grupo: '' });
   const [formAsignacion, setFormAsignacion] = useState({ maestro_id: '', materia_id: '' });
-  
-  // NUEVO: Estado para inscripciones de alumnos
   const [formInscripcion, setFormInscripcion] = useState({ alumno_id: '', materia_id: '' });
 
   useEffect(() => { cargarDatos(); }, [activeTab]);
@@ -63,7 +67,7 @@ export const ControlEscolarView = () => {
         const res = await client.get('/admin/materias');
         setMaterias(res.data);
       }
-      if (activeTab === 'alumnos' || activeTab === 'asignaciones') { // Cargamos alumnos en asignaciones también
+      if (activeTab === 'alumnos' || activeTab === 'asignaciones') {
         const res = await client.get('/admin/alumnos');
         setAlumnos(res.data);
       }
@@ -78,6 +82,7 @@ export const ControlEscolarView = () => {
     setMensaje({ tipo: 'success', texto: msg });
     setModoEdicion(false);
     setIdEdicion(null);
+    setEditandoNota(null); // Cerrar modal
     limpiarForms();
     cargarDatos();
     setTimeout(() => setMensaje(null), 3000);
@@ -95,78 +100,39 @@ export const ControlEscolarView = () => {
     setFormInscripcion({ alumno_id: '', materia_id: '' });
   };
 
-  // --- CRUD FUNCTIONS ---
-  const guardarMaestro = async (e: React.FormEvent) => {
+  // --- LOGICA DE EDICIÓN DE NOTA (NUEVO) ---
+  const abrirModalEdicion = (reporte: Reporte) => {
+    setEditandoNota(reporte);
+    setNuevaNota(String(reporte.nota));
+    setNuevaObservacion(reporte.observaciones || '');
+  };
+
+  const guardarEdicionNota = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editandoNota) return;
+
     try {
-      if (modoEdicion && idEdicion) {
-        await client.put(`/admin/maestros/${idEdicion}`, formMaestro);
-        handleSuccess('Maestro actualizado');
-      } else {
-        await client.post('/admin/maestros', formMaestro);
-        handleSuccess('Maestro registrado');
-      }
+      await client.put(`/admin/calificaciones/${editandoNota.id}`, {
+        nota: nuevaNota,
+        observaciones: nuevaObservacion
+      });
+      handleSuccess('Calificación rectificada correctamente');
     } catch (err) { handleError(err); }
   };
 
-  const borrarMaestro = async (id: number) => {
-    if (!confirm('¿Seguro que quieres eliminar a este maestro?')) return;
-    try { await client.delete(`/admin/maestros/${id}`); handleSuccess('Maestro eliminado'); } catch (err) { handleError(err); }
-  };
+  // --- CRUD FUNCTIONS EXISTENTES ---
+  // (Maestros, Alumnos, Materias... sin cambios)
+  const guardarMaestro = async (e: React.FormEvent) => { e.preventDefault(); try { if (modoEdicion && idEdicion) { await client.put(`/admin/maestros/${idEdicion}`, formMaestro); handleSuccess('Maestro actualizado'); } else { await client.post('/admin/maestros', formMaestro); handleSuccess('Maestro registrado'); } } catch (err) { handleError(err); } };
+  const borrarMaestro = async (id: number) => { if (!confirm('¿Seguro?')) return; try { await client.delete(`/admin/maestros/${id}`); handleSuccess('Maestro eliminado'); } catch (err) { handleError(err); } };
+  
+  const guardarMateria = async (e: React.FormEvent) => { e.preventDefault(); try { if (modoEdicion && idEdicion) { await client.put(`/admin/materias/${idEdicion}`, formMateria); handleSuccess('Materia actualizada'); } else { await client.post('/admin/materias', formMateria); handleSuccess('Materia creada'); } } catch (err) { handleError(err); } };
+  const borrarMateria = async (id: number) => { if (!confirm('¿Seguro?')) return; try { await client.delete(`/admin/materias/${id}`); handleSuccess('Materia eliminada'); } catch (err) { handleError(err); } };
 
-  const guardarMateria = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (modoEdicion && idEdicion) {
-        await client.put(`/admin/materias/${idEdicion}`, formMateria);
-        handleSuccess('Materia actualizada');
-      } else {
-        await client.post('/admin/materias', formMateria);
-        handleSuccess('Materia creada');
-      }
-    } catch (err) { handleError(err); }
-  };
+  const guardarAlumno = async (e: React.FormEvent) => { e.preventDefault(); try { if (modoEdicion && idEdicion) { await client.put(`/admin/alumnos/${idEdicion}`, formAlumno); handleSuccess('Alumno actualizado'); } else { await client.post('/admin/alumnos', formAlumno); handleSuccess('Alumno inscrito'); } } catch (err) { handleError(err); } };
+  const borrarAlumno = async (id: number) => { if (!confirm('¿Seguro?')) return; try { await client.delete(`/admin/alumnos/${id}`); handleSuccess('Alumno eliminado'); } catch (err) { handleError(err); } };
 
-  const borrarMateria = async (id: number) => {
-    if (!confirm('¿Eliminar materia?')) return;
-    try { await client.delete(`/admin/materias/${id}`); handleSuccess('Materia eliminada'); } catch (err) { handleError(err); }
-  };
-
-  const guardarAlumno = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (modoEdicion && idEdicion) {
-        await client.put(`/admin/alumnos/${idEdicion}`, formAlumno);
-        handleSuccess('Alumno actualizado');
-      } else {
-        await client.post('/admin/alumnos', formAlumno);
-        handleSuccess('Alumno inscrito');
-      }
-    } catch (err) { handleError(err); }
-  };
-
-  const borrarAlumno = async (id: number) => {
-    if (!confirm('¿Eliminar alumno?')) return;
-    try { await client.delete(`/admin/alumnos/${id}`); handleSuccess('Alumno eliminado'); } catch (err) { handleError(err); }
-  };
-
-  const vincular = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await client.post(`/admin/maestros/${formAsignacion.maestro_id}/materias`, { materia_id: formAsignacion.materia_id });
-      handleSuccess('Materia asignada a Maestro correctamente');
-    } catch (err) { handleError(err); }
-  };
-
-  // NUEVO: Función para inscribir alumno
-  const inscribir = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      // Usamos la ruta que creamos en el backend
-      await client.post('/admin/inscripciones', formInscripcion);
-      handleSuccess('Alumno inscrito en la materia correctamente');
-    } catch (err) { handleError(err); }
-  };
+  const vincular = async (e: React.FormEvent) => { e.preventDefault(); try { await client.post(`/admin/maestros/${formAsignacion.maestro_id}/materias`, { materia_id: formAsignacion.materia_id }); handleSuccess('Asignación creada'); } catch (err) { handleError(err); } };
+  const inscribir = async (e: React.FormEvent) => { e.preventDefault(); try { await client.post('/admin/inscripciones', formInscripcion); handleSuccess('Alumno inscrito'); } catch (err) { handleError(err); } };
 
   const inactivarNota = async (id: number) => {
     if (!confirm('¿Eliminar esta calificación del reporte?')) return;
@@ -214,6 +180,11 @@ export const ControlEscolarView = () => {
                       <td className="text-muted small">{r.docente.nombre}</td>
                       <td className="fw-bold text-center">{r.nota}</td>
                       <td className="text-center">
+                        {/* BOTÓN EDITAR (NUEVO) */}
+                        <button className="btn btn-outline-primary btn-sm py-1 px-2 me-2" title="Rectificar Calificación" onClick={() => abrirModalEdicion(r)}>
+                           <IconoEditar />
+                        </button>
+                        {/* BOTÓN BORRAR */}
                         <button className="btn btn-outline-danger btn-sm py-1 px-2" title="Inactivar" onClick={()=>inactivarNota(r.id)}>
                             <IconoBorrar />
                         </button>
@@ -224,6 +195,48 @@ export const ControlEscolarView = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* MODAL PARA EDITAR NOTA */}
+            {editandoNota && (
+               <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+               <div className="modal-dialog">
+                 <div className="modal-content">
+                   <div className="modal-header">
+                     <h5 className="modal-title text-primary fw-bold">Rectificar Calificación</h5>
+                     <button className="btn-close" onClick={() => setEditandoNota(null)}></button>
+                   </div>
+                   <form onSubmit={guardarEdicionNota}>
+                     <div className="modal-body">
+                         <p className="mb-1"><strong>Alumno:</strong> {editandoNota.alumno.nombre}</p>
+                         <p className="mb-3"><strong>Materia:</strong> {editandoNota.materia.nombre}</p>
+
+                         <div className="mb-3">
+                             <label className="fw-bold small">Nueva Calificación</label>
+                             <input 
+                                 type="number" className="form-control" 
+                                 min="0" max="100" required 
+                                 value={nuevaNota} onChange={e => setNuevaNota(e.target.value)} 
+                             />
+                         </div>
+                         <div className="mb-3">
+                             <label className="fw-bold small">Motivo / Observación</label>
+                             <textarea 
+                                 className="form-control" rows={2} 
+                                 placeholder="Razón del cambio..."
+                                 value={nuevaObservacion} onChange={e => setNuevaObservacion(e.target.value)}
+                             />
+                         </div>
+                     </div>
+                     <div className="modal-footer">
+                         <button type="button" className="btn btn-secondary" onClick={() => setEditandoNota(null)}>Cancelar</button>
+                         <button type="submit" className="btn btn-primary">Guardar Cambios</button>
+                     </div>
+                   </form>
+                 </div>
+               </div>
+             </div>
+            )}
+
           </div>
         )}
 
@@ -337,7 +350,7 @@ export const ControlEscolarView = () => {
           </div>
         )}
 
-        {/* --- TAB: ASIGNACIONES (ACTUALIZADA) --- */}
+        {/* --- TAB: ASIGNACIONES --- */}
         {activeTab === 'asignaciones' && (
            <div className="row g-4">
              <div className="col-md-6">
@@ -367,7 +380,6 @@ export const ControlEscolarView = () => {
                 </div>
              </div>
 
-             {/* DERECHA: Inscribir Alumno (Verde) */}
              <div className="col-md-6">
                 <div className="card h-100 shadow-sm border-0">
                   <div className="card-header bg-white fw-bold text-success">

@@ -3,7 +3,7 @@ import {
   obtenerMaestros, crearMaestro, actualizarMaestro, eliminarMaestro,
   obtenerMaterias, crearMateria, actualizarMateria, eliminarMateria,
   obtenerAlumnos, inscribirAlumno, actualizarAlumno, eliminarAlumno,
-  asignarMateria,
+  asignarMateria,actualizarCalificacionAdmin,
   obtenerReporteCompleto, deleteCalificacion, inscribirAlumnoEnMateria
 } from '../controllers/adminController.js';
 import { verifyToken, authorizeRol } from '../middlewares/authMiddleware.js';
@@ -37,6 +37,6 @@ router.post('/inscripciones', inscribirAlumnoEnMateria)
 // Reportes
 router.get('/reportes', obtenerReporteCompleto);
 router.delete('/calificaciones/:id', deleteCalificacion)
-
+router.put('/calificaciones/:id', actualizarCalificacionAdmin)
 
 export default router;

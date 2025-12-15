@@ -12,6 +12,8 @@ DB_PASS=contra123
 DB_HOST=db
 DB_PORT=5432
 JWT_SECRET=super_secreto
+DB_DIALECT=postgres
+DATABASE_URL=postgres://usuario:contra123@db:5432/control_escolar_db
 ```
 
 Si corres **SIN Docker** (modo local), cambia el host:
@@ -40,11 +42,11 @@ docker-compose up --build
 ## **3. Migraciones y Seeders**
 Ejecutar migraciones 
 ```bash
-docker-compose exec backend npx sequelize-cli db:migrate
+docker-compose exec api npx sequelize-cli db:migrate
 ```
 Reiniciar Base de Datos (Seeders) para llenarla con los datos de prueba (Admin, Maestros, Alumnos), ejecuta:
 ```bash
-docker-compose exec backend npm run seed
+docker-compose exec api npm run seed
 ```
 
 ---

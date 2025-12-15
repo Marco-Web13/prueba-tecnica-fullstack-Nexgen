@@ -19,13 +19,8 @@ services:
     restart: always
     ports:
       - "3000:3000"
-    environment:
-      - PORT=3000
-      - DB_HOST=db 
-      - DB_USER=usuario
-      - DB_PASSWORD=contra123
-      - DB_NAME=control_escolar_db
-      - JWT_SECRET=super_secreto
+    env_file:
+      - ./backend/.env
     depends_on:
       - db
 
